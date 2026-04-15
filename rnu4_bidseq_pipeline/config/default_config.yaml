@@ -1,0 +1,137 @@
+# ============================================================
+# BID-seq Nanopore Pipeline — Default Configuration
+# RNU4-2 / RENU Syndrome Project
+# ============================================================
+# All parameters documented with rationale for each choice.
+
+# ── Reference ────────────────────────────────────────────────
+reference:
+  # NCBI accession for human RNU4-2 (U4C snRNA, 141 nt)
+  ncbi_accession: "NR_002715"
+  # Sequence name used in FASTA header and BAM references
+  seq_name: "RNU4-2"
+  # If true, fetches fresh sequence from NCBI on first run
+  auto_fetch: true
+  # Known pseudouridine sites in human U4 snRNA (1-based, from literature)
+  # Sources: Massenet et al. 1998, Darzacq et al. 2002
+  known_pseudoU_sites: [4, 72, 79]
+  # RENU syndrome T-insertion coordinates (1-based, 0-based in code = 63/64)
+  renu_insertion_region:
+    start: 63   # 1-based position BEFORE insertion
+    end: 65     # 1-based position AFTER insertion
+    expected_sequence: "T"
+    nomenclature: "n.64_65insT"
+
+# ── Sequencing mode ───────────────────────────────────────────
+sequencing:
+  # "cdna"       = nanopore cDNA after BID-seq reverse transcription (most common)
+  # "direct_rna" = direct RNA nanopore (use with IVT controls)
+  mode: "cdna"
+  # Strandedness: "forward", "reverse", "unstranded"
+  strand: "unstranded"
+
+# ── Alignment (minimap2) ──────────────────────────────────────
+alignment:
+  # Minimap2 preset; for cDNA nanopore use map-ont
+  preset: "map-ont"
+  # Additional minimap2 flags
+  extra_flags: "--cs -Y"
+  # Minimum mapping quality to keep a read (0–60)
+  min_mapq: 10
+  # Minimum read length (nt) to include in analysis
+  min_read_length: 50
+  # Maximum read length (nt); set high to be permissive
+  max_read_length: 10000
+  # Number of threads for minimap2/samtools
+  threads: 4
+
+# ── Pileup ────────────────────────────────────────────────────
+pileup:
+  # Minimum base quality to include in pileup (Phred)
+  min_base_quality: 0   # Keep at 0 for nanopore (qualities are unreliable)
+  # Minimum mapping quality to include read
+  min_mapq: 10
+  # Maximum depth per position (pysam stepper)
+  max_depth: 1000000
+  # Whether to count deletions that span position
+  count_spanning_deletions: true
+  # Whether to include duplicate reads
+  include_duplicates: true
+
+# ── Quality Control ───────────────────────────────────────────
+qc:
+  # Minimum read quality (mean Phred) to include in analysis
+  min_mean_quality: 7.0
+  # Minimum coverage depth to consider a position for analysis
+  min_coverage: 20
+  # Warn if coverage at any called site drops below this
+  coverage_warning_threshold: 50
+  # Minimum fraction of RNU4-2 covered at min_coverage depth
+  min_transcript_coverage_fraction: 0.80
+
+# ── Statistical Thresholds ────────────────────────────────────
+statistics:
+  # ── Background estimation ────────────────────────────────
+  # Estimated nanopore background deletion rate (proportion).
+  # This is the baseline indel error rate for nanopore cDNA.
+  # Reference: ~5–8% observed in R9.4.1; ~2–4% in R10.4.1
+  # Used as floor for background when no control is provided.
+  nanopore_background_deletion_rate: 0.06
+
+  # Minimum deletion rate (treated) to even consider a site.
+  # Must be meaningfully above nanopore noise floor.
+  min_deletion_rate: 0.12
+
+  # Minimum fold change over control (or background estimate).
+  # BID-seq true signal is typically 5–15x over background.
+  min_fold_change: 3.0
+
+  # Minimum fold change for HIGH_CONFIDENCE calls.
+  high_confidence_fold_change: 5.0
+
+  # FDR (q-value) cutoff after Benjamini-Hochberg correction.
+  fdr_threshold: 0.05
+
+  # Strict FDR for HIGH_CONFIDENCE calls.
+  high_confidence_fdr: 0.01
+
+  # Minimum absolute deletion rate for HIGH_CONFIDENCE calls.
+  high_confidence_min_deletion_rate: 0.25
+
+  # Percentile of position deletion rates used to estimate
+  # background when running in single-sample (no control) mode.
+  background_percentile: 25
+
+  # ── Homopolymer context filter ───────────────────────────
+  # Positions within homopolymer runs of this length or longer
+  # are flagged (nanopore has elevated indel errors here).
+  homopolymer_flag_length: 4
+
+# ── RENU Tracking ─────────────────────────────────────────────
+renu:
+  # Minimum reads showing insertion to report the site
+  min_insertion_reads: 3
+  # Minimum VAF (variant allele frequency) to report
+  min_vaf: 0.02
+  # VAF boundaries for zygosity inference
+  # Below het_low → mosaic/sequencing artifact
+  # het_low–het_high → heterozygous
+  # Above hom_low → homozygous
+  het_low: 0.30
+  het_high: 0.70
+  hom_low: 0.85
+
+# ── Output ────────────────────────────────────────────────────
+output:
+  # Write per-position TSV table
+  write_tsv: true
+  # Write JSON summary
+  write_json: true
+  # Write HTML report
+  write_html: true
+  # Write BED file of called pseudoU sites
+  write_bed: true
+  # Write IGV session file
+  write_igv_session: false
+  # Include raw pileup data in TSV
+  include_raw_pileup: true

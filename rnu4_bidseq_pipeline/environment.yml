@@ -1,0 +1,44 @@
+name: bidseq_nanopore
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - minimap2=2.26
+  - samtools=1.18
+  - pip
+
+  - pip:
+    # Core scientific
+    - numpy>=1.24
+    - pandas>=2.0
+    - scipy>=1.11
+    - statsmodels>=0.14
+
+    # Bioinformatics
+    - pysam>=0.21
+    - biopython>=1.81
+
+    # Nanopore QC
+    - nanostat>=1.6
+    - nanoq>=0.10
+
+    # Visualization & reporting
+    - matplotlib>=3.7
+    - seaborn>=0.12
+    - jinja2>=3.1
+    - plotly>=5.15
+
+    # CLI & config
+    - click>=8.1
+    - rich>=13.0
+    - pyyaml>=6.0
+
+    # Testing
+    - pytest>=7.4
+    - pytest-cov>=4.1
+
+    # Utilities
+    - tqdm>=4.65
+    - loguru>=0.7

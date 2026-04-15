@@ -1,0 +1,2 @@
+[console_scripts]
+bidseq = bidseq.cli:main
